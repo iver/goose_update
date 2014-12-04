@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -12,21 +13,32 @@ import (
 
 func main() {
 	dir := flag.String("path", "db/migrations/", "goose migrations path")
+	seed := flag.String("seed", "", "Init count date as string (20060102150405)")
 	flag.Parse()
 
 	var serie Serie
 	var err error
+	var init_date time.Time
 
-	if serie, err = NewSerie(time.Now()); err != nil {
-		fmt.Printf("Error: %v", err)
+	if strings.EqualFold(*seed, "") == false {
+		if init_date, err = time.Parse("2006/01/02 15:04 05", *seed); err != nil {
+			log.Printf("Seed must be in date time format as 2006/01/02 15:04 05 \n %v", err)
+			return
+		}
+	} else {
+		init_date = time.Now()
+	}
+	if serie, err = NewSerie(init_date); err != nil {
+		log.Printf("Error: %v", err)
+		return
 	}
 
 	list, _ := ioutil.ReadDir(*dir)
 	for _, file := range list {
 		if new_name, err := UpdateName(file, *dir, &serie); err != nil {
-			fmt.Println("Error: %v", err)
+			log.Println("Error: %v", err)
 		} else {
-			fmt.Printf("\n File %v renamed to %v", file.Name(), new_name)
+			log.Printf("File %v renamed to %v \n", file.Name(), new_name)
 		}
 	}
 }
